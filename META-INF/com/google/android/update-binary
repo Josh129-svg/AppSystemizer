@@ -297,6 +297,10 @@ if $LATESTARTSERVICE; then
   cp -af $INSTALLER/common/service.sh $MODPATH/service.sh
 fi
 
+ui_print "- Running AppSystemizer"
+log_print "Running AppSystemizer"
+sh $MODPATH/post-fs-data.sh
+
 ui_print "- Setting permissions"
 set_permissions
 
