@@ -279,6 +279,10 @@ if $PROPFILE; then
   cp -af $INSTALLER/common/system.prop $MODPATH/system.prop
 fi
 
+# Retrieve current module.prop ver and versionCode
+ver="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
+versionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
+
 # Module info
 cp -af $INSTALLER/module.prop $MODPATH/module.prop
 if $BOOTMODE; then
@@ -297,9 +301,9 @@ if $LATESTARTSERVICE; then
   cp -af $INSTALLER/common/service.sh $MODPATH/service.sh
 fi
 
+# Run AppSystemizer script
 ui_print "- Running AppSystemizer"
-log_print "Running AppSystemizer"
-sh $MODPATH/post-fs-data.sh
+sh $MODPATH/post-fs-data.sh "upgrade" "$ver" "$versionCode"
 
 ui_print "- Setting permissions"
 set_permissions
