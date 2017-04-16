@@ -1,5 +1,5 @@
+[system]
+	latest-apk = latest-apk
 [submodule "system"]
 	path = system
 	url = git@github.com:loserskater/AppSystemizer-companion.git
-[system]
-	latest-apk = latest-apk
