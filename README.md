@@ -12,4 +12,3 @@ Only the launchers listed below are systemized by default. If you need to system
   - Better integration with companion app.
   - Companion app update.
   - Change log trimmed of no longer relevant entries.
-  - When upgrading from any previous version to 12.0.0 you will need to reboot twice.
