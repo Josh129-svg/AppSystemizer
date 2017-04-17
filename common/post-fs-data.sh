@@ -9,9 +9,11 @@ MODDIR=${0%/*}
 # set +f
 STOREDLIST=/data/data/com.loserskater.appsystemizer/files/appslist.conf
 ver="$(sed -n 's/version=//p' ${MODDIR}/module.prop)"; ver=${ver:+ $ver};
-apps=("com.google.android.apps.nexuslauncher,NexusLauncherPrebuilt"
+apps=(
+"com.google.android.apps.nexuslauncher,NexusLauncherPrebuilt"
 "com.google.android.apps.pixelclauncher,PixelCLauncherPrebuilt"
-"com.actionlauncher.playstore,ActionLauncher")
+"com.actionlauncher.playstore,ActionLauncher"
+)
 
 log_print() {
   local LOGFILE=/cache/magisk.log
@@ -19,9 +21,7 @@ log_print() {
   log -p i -t "AppSystemizer${ver}" "$*"
 }
 
-
 # Copied from update-binary
-log_print() { echo "$1"; }
 is_mounted() {
   if [ ! -z "$2" ]; then
     cat /proc/mounts | grep $1 | grep $2, >/dev/null
@@ -112,7 +112,6 @@ update() {
 
 upgrade() {
   OLDSYSPRIVAPPDIR="/magisk/AppSystemizer/system/priv-app"
-
   local oldVer="$1" oldVersionCode="$2"
   if [ -d "${OLDSYSPRIVAPPDIR}" ]; then
     log_print "Existing AppSystemizer $oldVer ($oldVersionCode) module found."
