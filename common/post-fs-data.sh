@@ -91,6 +91,7 @@ update() {
   request_size_check ""
   SIZE=$((reqSizeM / 32 * 32 + 64));
   log_print "Creating $IMG with size ${SIZE}M"
+  mkdir -p $INSTALLER
   echo "$FCI" > ${INSTALLER}/file_contexts_image
   make_ext4fs -l ${SIZE}M -a /magisk -S $INSTALLER/file_contexts_image $IMG
 
@@ -100,8 +101,7 @@ update() {
     exit 1
   fi
 
-#  mkdir -p $MODPATH/system/priv-app
-#  cp -af $MODMOUNTEDPATH/. $MODPATH
+  cp -af $MODDIR/. $MODPATH
   MODDIR=$MODPATH
   install
 }
