@@ -60,7 +60,7 @@ mount_image() {
   fi
 }
 request_size_check() {
-  reqSizeM=0
+  [ -e "$1" ] && reqSizeM=$(unzip -l "$1" 2>/dev/null | tail -n 1 | /data/magisk/busybox awk '{ print $1 }') || reqSizeM=0
   local i apps apk_size line pkg_name pkg_label
   [ -s "$STOREDLIST" ] && eval apps="($(<${STOREDLIST}))" || reqSizeM=$((reqSizeM + 1048576))
   for line in "${apps[@]}"; do
@@ -88,7 +88,7 @@ update() {
   IMG=/data/$IMGNAME
   FCI='/magisk(/.*)? u:object_r:system_file:s0'
 
-  request_size_check
+  request_size_check ""
   SIZE=$((reqSizeM / 32 * 32 + 64));
   log_print "Creating $IMG with size ${SIZE}M"
   echo "$FCI" > ${INSTALLER}/file_contexts_image
