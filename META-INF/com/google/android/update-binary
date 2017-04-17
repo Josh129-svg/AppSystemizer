@@ -103,6 +103,21 @@ mktouch() {
 
 request_size_check() {
   reqSizeM=`unzip -l "$1" 2>/dev/null | tail -n 1 | awk '{ print $1 }'`
+  local i apps apk_size line pkg_name pkg_label STOREDLIST=/data/data/com.loserskater.appsystemizer/files/appslist.conf
+  [ -s "$STOREDLIST" ] && eval apps="($(<${STOREDLIST}))" || reqSizeM=$((reqSizeM + 10058776))
+  for line in "${apps[@]}"; do
+    IFS=',' read pkg_name pkg_label <<< $line
+    [[ "$pkg_name" = "android" || "$pkg_label" = "AndroidSystem" ]] && continue
+    [[ -z "$pkg_name" || -z "$pkg_label" ]] && continue
+      for i in /data/app/${pkg_name}-*/base.apk; do
+        if [ "$i" != "/data/app/${pkg_name}-*/base.apk" ]; then
+          [ -e "/magisk/AppSystemizer/system/priv-app/${pkg_label}" ] && continue
+          [ -e "/system/priv-app/${pkg_label}" ] && continue
+          apk_size=$(wc -c <"$i" 2>/dev/null)
+          reqSizeM=$((reqSizeM + apk_size))
+        fi
+      done
+   done
   reqSizeM=$((reqSizeM / 1048576 + 1))
 }
 

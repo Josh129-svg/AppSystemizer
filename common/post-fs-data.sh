@@ -6,7 +6,7 @@ MODDIR=${0%/*}
 # This script will be executed in post-fs-data mode
 # More info in the main Magisk thread
 
-set +f
+# set +f
 OLDSYSPRIVAPPDIR="/magisk/AppSystemizer/system/priv-app"
 STOREDLIST=/data/data/com.loserskater.appsystemizer/files/appslist.conf
 ver="$(sed -n 's/version=//p' ${MODDIR}/module.prop)"; ver=${ver:+ $ver};
@@ -17,7 +17,7 @@ apps=(
 "com.actionlauncher.playstore,ActionLauncher"
 )
 
-upgrade() {
+upgrade_appsystemizer() {
   local oldVer="$1" oldVersionCode="$2"
   log_print "Existing AppSystemizer $oldVer ($oldVersionCode) module found."
   if [ $((oldVersionCode)) -ge 50 ]; then
@@ -47,11 +47,9 @@ log_print() {
 
 [ -d /system/priv-app ] || log_print "No access to /system/priv-app!"
 [ -d /data/app ] || log_print "No access to /data/app!"
-[[ "$1" = "upgrade" && -d "${OLDSYSPRIVAPPDIR}" ]] && shift && upgrade "$1" "$2"
-
+[[ "$1" = "upgrade" && -d "${OLDSYSPRIVAPPDIR}" ]] && shift && upgrade_appsystemizer "$1" "$2"
 [ -s "$STOREDLIST" ] && { eval apps="($(<${STOREDLIST}))"; log_print "Loaded apps list from ${STOREDLIST}."; }  || { log_print "Failed to load apps list from ${STOREDLIST}."; unset STOREDLIST; }
 list="${apps[*]}";
-
 for i in ${MODDIR}/system/priv-app/*/*.apk; do
   if [ "$i" != "${MODDIR}/system/priv-app/*/*.apk" ]; then
     pkg_name="${i##*/}"; pkg_name="${pkg_name%.*}"; pkg_label="${i%/*}";  pkg_label="${pkg_label##*/}";
