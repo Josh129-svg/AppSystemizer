@@ -269,9 +269,14 @@ if ! is_mounted $MOUNTPATH; then
   exit 1
 fi
 
+# Check if upgrade
+[ -e "$MODPATH" ] && UPGRADE=true || UPGRADE=false
+
 # Create mod paths
-rm -rf $MODPATH 2>/dev/null
-mkdir -p $MODPATH
+if ! $UPGRADE; then
+  rm -rf $MODPATH 2>/dev/null
+  mkdir -p $MODPATH
+fi
 
 # Copy files
 ui_print "- Copying files"
@@ -293,8 +298,10 @@ if $PROPFILE; then
 fi
 
 # Retrieve current module.prop ver and versionCode
-ver="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
-versionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
+if $UPGRADE; then
+  ver="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
+  versionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
+fi
 
 # Module info
 cp -af $INSTALLER/module.prop $MODPATH/module.prop
@@ -316,7 +323,11 @@ fi
 
 # Run AppSystemizer script
 ui_print "- Running AppSystemizer"
-sh $MODPATH/post-fs-data.sh "upgrade" "$ver" "$versionCode"
+if $UPGRADE; then
+  sh $MODPATH/post-fs-data.sh "upgrade" "$ver" "$versionCode"
+else
+  sh $MODPATH/post-fs-data.sh
+fi
 
 ui_print "- Setting permissions"
 set_permissions
