@@ -99,3 +99,31 @@ set_permissions() {
   # set_perm  $MODPATH/system/bin/dex2oat         0       2000    0755         u:object_r:dex2oat_exec:s0
   # set_perm  $MODPATH/system/lib/libart.so       0       0       0644
 }
+
+# Retrieve current module.prop ver and versionCode
+currentVer="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
+currentVersionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
+
+log_print() {
+  local LOGFILE=/cache/magisk.log
+  echo "AppSystemizer${ver}: $*" >> $LOGFILE
+  log -p i -t "AppSystemizer${ver}" "$*"
+}
+
+request_size_check() {
+  [ -e "$1" ] && reqSizeM=$(unzip -l "$1" 2>/dev/null | tail -n 1 | awk '{ print $1 }') || reqSizeM=0
+  local i apps apk_size line pkg_name pkg_label STOREDLIST=/data/data/com.loserskater.appsystemizer/files/appslist.conf
+  [ -s "$STOREDLIST" ] && eval apps="($(<${STOREDLIST}))" || reqSizeM=$((reqSizeM + 1048576))
+  for line in "${apps[@]}"; do
+    IFS=',' read pkg_name pkg_label <<< $line
+    [[ "$pkg_name" = "android" || "$pkg_label" = "AndroidSystem" ]] && continue
+    [[ -z "$pkg_name" || -z "$pkg_label" ]] && continue
+      for i in /data/app/${pkg_name}-*/base.apk; do
+        if [ "$i" != "/data/app/${pkg_name}-*/base.apk" ]; then
+          apk_size=$(wc -c <"$i" 2>/dev/null)
+          reqSizeM=$((reqSizeM + apk_size))
+        fi
+      done
+   done
+  reqSizeM=$((reqSizeM / 1048576 + 1))
+}

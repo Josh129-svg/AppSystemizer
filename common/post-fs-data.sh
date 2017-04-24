@@ -78,6 +78,7 @@ request_size_check() {
 }
 
 update() {
+  log_print "Updating systemized apps"
   BOOTMODE=true
   MODID=AppSystemizer
   TMPDIR=/dev/tmp
@@ -103,14 +104,15 @@ update() {
 
   cp -af $MODDIR/. $MODPATH
   MODDIR=$MODPATH
-  install
+  run
 }
 
 upgrade() {
+  log_print "Installing/Upgrading AppSystemizer"
   OLDSYSPRIVAPPDIR="/magisk/AppSystemizer/system/priv-app"
   local oldVer="$1" oldVersionCode="$2"
   if [ -d "${OLDSYSPRIVAPPDIR}" ]; then
-#    log_print "Existing AppSystemizer $oldVer ($oldVersionCode) module found."
+    log_print "Existing AppSystemizer $oldVer ($oldVersionCode) module found."
     if [ $((oldVersionCode)) -ge 50 ]; then
     	cp -rf "${OLDSYSPRIVAPPDIR}" "${MODDIR}/system/" && log_print "Migrated systemized apps from AppSystemizer $oldVer."
     else
@@ -128,12 +130,12 @@ upgrade() {
       done
     fi
   else
-    install
+    run
   fi
 }
 
-install() {
-#  log_print "Installing AppSystemizer"
+run() {
+  log_print "Running AppSystemizer"
   [ -s "$STOREDLIST" ] && { eval apps="($(<${STOREDLIST}))"; log_print "Loaded apps list from ${STOREDLIST}."; } || { unset STOREDLIST; }
   list="${apps[*]}";
   for i in ${MODDIR}/system/priv-app/*/*.apk; do
@@ -177,5 +179,5 @@ install() {
 case $1 in
   upgrade)  shift; upgrade "$1" "$2";;
   update)   update;;
-  *)        install;;
+  *)        run;;
 esac

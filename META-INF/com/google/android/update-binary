@@ -102,20 +102,7 @@ mktouch() {
 }
 
 request_size_check() {
-  [ -e "$1" ] && reqSizeM=$(unzip -l "$1" 2>/dev/null | tail -n 1 | /data/magisk/busybox awk '{ print $1 }') || reqSizeM=0
-  local i apps apk_size line pkg_name pkg_label STOREDLIST=/data/data/com.loserskater.appsystemizer/files/appslist.conf
-  [ -s "$STOREDLIST" ] && eval apps="($(<${STOREDLIST}))" || reqSizeM=$((reqSizeM + 1048576))
-  for line in "${apps[@]}"; do
-    IFS=',' read pkg_name pkg_label <<< $line
-    [[ "$pkg_name" = "android" || "$pkg_label" = "AndroidSystem" ]] && continue
-    [[ -z "$pkg_name" || -z "$pkg_label" ]] && continue
-      for i in /data/app/${pkg_name}-*/base.apk; do
-        if [ "$i" != "/data/app/${pkg_name}-*/base.apk" ]; then
-          apk_size=$(wc -c <"$i" 2>/dev/null)
-          reqSizeM=$((reqSizeM + apk_size))
-        fi
-      done
-   done
+  reqSizeM=`unzip -l "$1" 2>/dev/null | tail -n 1 | awk '{ print $1 }'`
   reqSizeM=$((reqSizeM / 1048576 + 1))
 }
 
@@ -292,10 +279,6 @@ if $PROPFILE; then
   cp -af $INSTALLER/common/system.prop $MODPATH/system.prop
 fi
 
-# Retrieve current module.prop ver and versionCode
-ver="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
-versionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
-
 # Module info
 cp -af $INSTALLER/module.prop $MODPATH/module.prop
 if $BOOTMODE; then
@@ -316,7 +299,7 @@ fi
 
 # Run AppSystemizer script
 ui_print "- Running AppSystemizer"
-sh $MODPATH/post-fs-data.sh "upgrade" "$ver" "$versionCode"
+sh $MODPATH/post-fs-data.sh "upgrade" "$currentVer" "$currentVersionCode"
 
 ui_print "- Setting permissions"
 set_permissions
