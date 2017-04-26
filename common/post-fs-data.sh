@@ -142,7 +142,7 @@ run() {
     if [ "$i" != "${MODDIR}/system/priv-app/*/*.apk" ]; then
       pkg_name="${i##*/}"; pkg_name="${pkg_name%.*}"; pkg_label="${i%/*}";  pkg_label="${pkg_label##*/}";
       if [ "$list" = "${list//${pkg_name}/}" ]; then
-        rm -rf ${MODDIR}/system/priv-app/${pkg_label} && log_print "Unsystemized system/priv-app/${pkg_label}/${pkg_name}."
+        rm -rf ${MODDIR}/system/priv-app/${pkg_label} && log_print "Unsystemized ${pkg_name}: change will take effect after reboot."
       fi
     fi
   done
@@ -157,7 +157,7 @@ run() {
           [ -e "/system/priv-app/${pkg_label}" ] && { log_print "Ignoring ${pkg_name}: already a system app."; continue; }
         	mkdir -p "${MODDIR}/system/priv-app/${pkg_label}" 2>/dev/null
   	      if cp "$i" "${MODDIR}/system/priv-app/${pkg_label}/${pkg_name}.apk"; then
-            log_print "Created /system/priv-app/${pkg_label}/${pkg_name}.apk"
+            log_print "Systemized ${pkg_name}: change will take effect after reboot."
           else
             log_print "Copy Failed: cp $i ${MODDIR}/system/priv-app/${pkg_label}/${pkg_name}.apk"
             [ -e ${MODDIR}/system/priv-app/${pkg_label} ] && rm -rf ${MODDIR}/system/priv-app/${pkg_label}
