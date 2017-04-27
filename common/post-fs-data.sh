@@ -7,8 +7,8 @@ MODDIR=${0%/*}
 # More info in the main Magisk thread
 
 # set +f
-STOREDLIST=/data/data/com.loserskater.appsystemizer/files/appslist.conf
-ver="$(sed -n 's/version=//p' ${MODDIR}/module.prop)"; ver=${ver:+ $ver};
+STOREDLIST='/data/data/com.loserskater.appsystemizer/files/appslist.conf'
+[ -s "${MODDIR}/module.prop" ] && { ver="$(sed -n 's/version=//p' ${MODDIR}/module.prop)"; ver=${ver:+ $ver}; }
 apps=("com.google.android.apps.nexuslauncher,NexusLauncherPrebuilt" "com.google.android.apps.pixelclauncher,PixelCLauncherPrebuilt" "com.actionlauncher.playstore,ActionLauncher")
 
 log_print() {
@@ -110,9 +110,9 @@ update() {
 upgrade() {
   log_print "Installing/Upgrading AppSystemizer"
   OLDSYSPRIVAPPDIR="/magisk/AppSystemizer/system/priv-app"
-  local oldVer="$1" oldVersionCode="$2"
+  local oldVer="${1:-0}" oldVersionCode="${2:-0}"
   if [ -d "${OLDSYSPRIVAPPDIR}" ]; then
-    log_print "Existing AppSystemizer $oldVer ($oldVersionCode) module found."
+    log_print "Existing AppSystemizer $oldVer module found."
     if [ $((oldVersionCode)) -ge 50 ]; then
     	cp -rf "${OLDSYSPRIVAPPDIR}" "${MODDIR}/system/" && log_print "Migrated systemized apps from AppSystemizer $oldVer."
     else
