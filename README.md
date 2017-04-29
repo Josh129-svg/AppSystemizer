@@ -8,6 +8,10 @@ Only the launchers listed below are systemized by default. If you need to system
 
 
 ## Change Log
+12.0.3
+  - Companion app update.
+  - Script bugfix when magisk_merge was created too small.
+
 12.0.2
   - Companion app bugfix update.
   - Log messages update.

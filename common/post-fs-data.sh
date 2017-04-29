@@ -94,7 +94,7 @@ update() {
   log_print "Creating $IMG with size ${SIZE}M"
   mkdir -p $INSTALLER
   echo "$FCI" > ${INSTALLER}/file_contexts_image
-  make_ext4fs -l ${SIZE}M -a /magisk -S $INSTALLER/file_contexts_image $IMG
+  [ -e "$IMG" ] && resize2fs "$IMG" ${SIZE}M || make_ext4fs -l ${SIZE}M -a /magisk -S $INSTALLER/file_contexts_image $IMG
 
   mount_image $IMG $MOUNTPATH
   if ! is_mounted $MOUNTPATH; then
