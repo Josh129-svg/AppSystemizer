@@ -91,10 +91,15 @@ update() {
 
   request_size_check ""
   SIZE=$((reqSizeM / 32 * 32 + 64));
-  log_print "Creating $IMG with size ${SIZE}M"
   mkdir -p $INSTALLER
   echo "$FCI" > ${INSTALLER}/file_contexts_image
-  [ -e "$IMG" ] && resize2fs "$IMG" ${SIZE}M || make_ext4fs -l ${SIZE}M -a /magisk -S $INSTALLER/file_contexts_image $IMG
+  if [ -e "$IMG" ]; then
+    log_print "Existing $IMG found, resizing to ${SIZE}M"
+    resize2fs "$IMG" ${SIZE}M
+  else
+    log_print "Creating $IMG with size ${SIZE}M"
+    make_ext4fs -l ${SIZE}M -a /magisk -S $INSTALLER/file_contexts_image $IMG
+  fi
 
   mount_image $IMG $MOUNTPATH
   if ! is_mounted $MOUNTPATH; then
