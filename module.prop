@@ -1,7 +1,7 @@
 id=AppSystemizer
 name=App Systemizer
-version=12.0.3
-versionCode=53
+version=12.0.5
+versionCode=55
 author=loserskater, stangri
 description=This module converts user-installed apps to system apps with the help of companion AppSystemizer application.
 template=3

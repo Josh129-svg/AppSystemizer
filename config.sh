@@ -52,6 +52,12 @@ print_modname() {
   ui_print "*******************************"
   ui_print "         App Systemizer        "
   ui_print "*******************************"
+  ui_print " !!  This module CANNOT be  !! "
+  ui_print " !! installed from recovery !! "
+  ui_print "   Please, reboot to Android   "
+  ui_print "and install from Magisk Manager"
+  ui_print "*******************************"
+  [ -z "$SHELL" ] && exit 1
 }
 
 ##########################################################################################
@@ -103,31 +109,3 @@ set_permissions() {
 # Retrieve current module.prop ver and versionCode
 [ -s "/magisk/$MODID/module.prop" ] && currentVer="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
 [ -s "/magisk/$MODID/module.prop" ] && currentVersionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
-
-log_print() {
-  local LOGFILE=/cache/magisk.log
-  echo "AppSystemizer${ver}: $*" >> $LOGFILE
-  log -p i -t "AppSystemizer${ver}" "$*"
-}
-
-request_size_check() {
-  [ -e "$1" ] && reqSizeM=$(unzip -l "$1" 2>/dev/null | tail -n 1 | awk '{ print $1 }') || reqSizeM=0
-  local i apps apk_size line pkg_name pkg_label STOREDLIST='/data/data/com.loserskater.appsystemizer/files/appslist.conf'
-  if [ -s "$STOREDLIST" ]; then
-    eval apps="($(<${STOREDLIST}))"
-    [ -n "$apps" ] && for line in "${apps[@]}"; do
-      IFS=',' read pkg_name pkg_label <<< $line
-      [[ "$pkg_name" = "android" || "$pkg_label" = "AndroidSystem" ]] && continue
-      [[ -z "$pkg_name" || -z "$pkg_label" ]] && continue
-        for i in /data/app/${pkg_name}-*/base.apk; do
-          if [ "$i" != "/data/app/${pkg_name}-*/base.apk" ]; then
-            apk_size=$(wc -c <"$i" 2>/dev/null)
-            reqSizeM=$((reqSizeM + apk_size))
-          fi
-        done
-     done
-  else
-    reqSizeM=$((reqSizeM + 1048576))
-  fi
-  reqSizeM=$((reqSizeM / 1048576 + 1))
-}
