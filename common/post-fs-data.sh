@@ -6,10 +6,17 @@ MODDIR=${0%/*}
 # This script will be executed in post-fs-data mode
 # More info in the main Magisk thread
 
-# set +f
-STOREDLIST='/data/data/com.loserskater.appsystemizer/files/appslist.conf'
+OwnList=${MODDIR}/extras/appslist.conf
+AppList='/data/data/com.loserskater.appsystemizer/files/appslist.conf'
 [ -s "${MODDIR}/module.prop" ] && { ver="$(sed -n 's/version=//p' ${MODDIR}/module.prop)"; ver=${ver:+ $ver}; }
 apps=("com.google.android.apps.nexuslauncher,NexusLauncherPrebuilt" "com.google.android.apps.pixelclauncher,PixelCLauncherPrebuilt" "com.actionlauncher.playstore,ActionLauncher")
+#if [[ -s "$OwnList" && -s "$AppList" ]]; then
+#  eval ol="($(<${OwnList}))"; eval al="($(<${AppList}))"; apps=("${ol[@]}" "${al[@]}");
+#  log_print "Loaded apps list from ${OwnList}."; log_print "Loaded apps list from ${AppList}.";
+#else
+  if [ -s "$OwnList" ]; then eval apps="($(<${OwnList}))"; log_print "Loaded apps list from ${OwnList}."; else unset OwnList; fi
+  if [ -s "$AppList" ]; then eval apps="($(<${AppList}))"; log_print "Loaded apps list from ${AppList}."; else unset AppList; fi
+#fi
 
 log_print() {
   local LOGFILE=/cache/magisk.log
@@ -60,11 +67,10 @@ mount_image() {
   fi
 }
 request_size_check() {
-  [ -e "$1" ] && reqSizeM=$(unzip -l "$1" 2>/dev/null | tail -n 1 | /data/magisk/busybox awk '{ print $1 }') || reqSizeM=0
-  local i apps apk_size line pkg_name pkg_label
-  [ -s "$STOREDLIST" ] && eval apps="($(<${STOREDLIST}))" || reqSizeM=$((reqSizeM + 1048576))
-  for line in "${apps[@]}"; do
-    IFS=',' read pkg_name pkg_label <<< $line
+  [ -e "$1" ] && reqSizeM=$(unzip -l "$1" 2>/dev/null | tail -n 1 | awk '{ print $1 }') || reqSizeM=0
+  local i apk_size line pkg_name pkg_label
+  IFS=$' \t\n'; for line in "${apps[@]}"; do
+    IFS=',' read pkg_name pkg_label <<< "$line"
     [[ "$pkg_name" = "android" || "$pkg_label" = "AndroidSystem" ]] && continue
     [[ -z "$pkg_name" || -z "$pkg_label" ]] && continue
       for i in /data/app/${pkg_name}-*/base.apk; do
@@ -77,8 +83,7 @@ request_size_check() {
   reqSizeM=$((reqSizeM / 1048576 + 1))
 }
 
-update() {
-  log_print "Updating systemized apps"
+create_merge_image() {
   BOOTMODE=true
   MODID=AppSystemizer
   TMPDIR=/dev/tmp
@@ -109,24 +114,22 @@ update() {
 
   cp -af $MODDIR/. $MODPATH
   MODDIR=$MODPATH
-  run
 }
 
 upgrade() {
-  log_print "Installing/Upgrading AppSystemizer"
-  OLDSYSPRIVAPPDIR="/magisk/AppSystemizer/system/priv-app"
+  OLDSYSPRIVAPPDIR="${OLDMODDIR}/system/priv-app"
   local oldVer="${1:-0}" oldVersionCode="${2:-0}"
   if [ -d "${OLDSYSPRIVAPPDIR}" ]; then
     log_print "Existing AppSystemizer $oldVer module found."
-    if [ $((oldVersionCode)) -ge 50 ]; then
-    	cp -rf "${OLDSYSPRIVAPPDIR}" "${MODDIR}/system/" && log_print "Migrated systemized apps from AppSystemizer $oldVer."
+    if [ $((oldVersionCode)) -ge 56 ]; then
+    	cp -rf "${OLDSYSPRIVAPPDIR}" "${MODDIR}/system/" && log_print "Migrated systemized apps from AppSystemizer $oldVer: change will take effect after reboot."
     else
       for line in "${apps[@]}"; do
-        IFS=',' read pkg_name pkg_label <<< $line
+        IFS=',' read pkg_name pkg_label <<< "$line"
         if [ -e "${OLDSYSPRIVAPPDIR}/${pkg_label}" ]; then
           mkdir -p "${MODDIR}/system/priv-app/${pkg_label}" 2>/dev/null
           cp -rf "${OLDSYSPRIVAPPDIR}/${pkg_label}/${pkg_label}.apk" "${MODDIR}/system/priv-app/${pkg_label}/${pkg_name}.apk" && \
-            log_print "Migrated ${pkg_label} from AppSystemizer $oldVer."
+            log_print "Migrated ${pkg_label} from AppSystemizer $oldVer: change will take effect after reboot."
           chown 0:0 "${MODDIR}/system/priv-app/${pkg_label}"
           chmod 0755 "${MODDIR}/system/priv-app/${pkg_label}"
           chown 0:0 "${MODDIR}/system/priv-app/${pkg_label}/${pkg_name}.apk"
@@ -139,9 +142,18 @@ upgrade() {
   fi
 }
 
+update() {
+  OLDMODDIR="/magisk/AppSystemizer"
+  if [ -d "${OLDMODDIR}" ]; then
+    cp -rf "${OLDMODDIR}/auto_mount" "${MODDIR}/auto_mount"
+    cp -rf "${OLDMODDIR}/module.prop" "${MODDIR}/module.prop"
+    cp -rf "${OLDMODDIR}/post-fs-data.sh" "${MODDIR}/post-fs-data.sh"
+  fi
+  run
+}
+
 run() {
-  log_print "Running AppSystemizer"
-  [ -s "$STOREDLIST" ] && { eval apps="($(<${STOREDLIST}))"; log_print "Loaded apps list from ${STOREDLIST}."; } || { unset STOREDLIST; }
+  local i apk_size line pkg_name pkg_label
   list="${apps[*]}";
   for i in ${MODDIR}/system/priv-app/*/*.apk; do
     if [ "$i" != "${MODDIR}/system/priv-app/*/*.apk" ]; then
@@ -152,8 +164,8 @@ run() {
     fi
   done
 
-  for line in "${apps[@]}"; do
-    IFS=',' read pkg_name pkg_label <<< $line
+  IFS=$' \t\n'; for line in "${apps[@]}"; do
+    IFS=',' read pkg_name pkg_label <<< "$line"
     [[ "$pkg_name" = "android" || "$pkg_label" = "AndroidSystem" ]] && continue     # workaround for Companion App
     [[ -z "$pkg_name" || -z "$pkg_label" ]] && { log_print "Package name or package label empty: ${pkg_name}/${pkg_label}."; continue; }
       for i in /data/app/${pkg_name}-*/base.apk; do
@@ -171,7 +183,7 @@ run() {
   	     	chmod 0755 "${MODDIR}/system/priv-app/${pkg_label}"
   	     	chown 0:0 "${MODDIR}/system/priv-app/${pkg_label}/${pkg_name}.apk"
   	     	chmod 0644 "${MODDIR}/system/priv-app/${pkg_label}/${pkg_name}.apk"
-        elif [ -n "$STOREDLIST" ]; then
+        elif [ -n "$AppList" ]; then
           log_print "Ignoring ${pkg_name}: app is not installed."
         fi
       done
@@ -182,7 +194,19 @@ run() {
 [ -d /data/app ] || log_print "No access to /data/app!"
 
 case $1 in
-  upgrade)  shift; upgrade "$1" "$2";;
-  update)   update;;
-  *)        run;;
+  upgrade)
+    log_print "Installing/Upgrading AppSystemizer"
+    create_merge_image
+    shift; upgrade "$1" "$2"
+    exit 0;;
+  update)
+    log_print "Updating systemized apps"
+    create_merge_image
+    update
+    exit 0;;
+  *)
+    log_print "Running AppSystemizer"
+    create_merge_image
+    run
+    exit 0;;
 esac

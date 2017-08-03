@@ -298,7 +298,10 @@ if $LATESTARTSERVICE; then
 fi
 
 # Run AppSystemizer script
+unzip -o "$ZIP" "extras/*" -d $MODPATH
 ui_print "- Running AppSystemizer"
+[ -s "/magisk/$MODID/module.prop" ] && currentVer="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
+[ -s "/magisk/$MODID/module.prop" ] && currentVersionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
 sh $MODPATH/post-fs-data.sh "upgrade" "$currentVer" "$currentVersionCode"
 
 ui_print "- Setting permissions"

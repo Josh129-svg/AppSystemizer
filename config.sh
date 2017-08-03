@@ -105,7 +105,3 @@ set_permissions() {
   # set_perm  $MODPATH/system/bin/dex2oat         0       2000    0755         u:object_r:dex2oat_exec:s0
   # set_perm  $MODPATH/system/lib/libart.so       0       0       0644
 }
-
-# Retrieve current module.prop ver and versionCode
-[ -s "/magisk/$MODID/module.prop" ] && currentVer="$(sed -n 's/version=//p' /magisk/$MODID/module.prop)";
-[ -s "/magisk/$MODID/module.prop" ] && currentVersionCode="$(sed -n 's/versionCode=//p' /magisk/$MODID/module.prop)";
