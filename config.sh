@@ -57,7 +57,7 @@ print_modname() {
   ui_print "   Please, reboot to Android   "
   ui_print "and install from Magisk Manager"
   ui_print "*******************************"
-  [ -z "$SHELL" ] && exit 1
+#  [ -z "$SHELL" ] && exit 1
 }
 
 ##########################################################################################
