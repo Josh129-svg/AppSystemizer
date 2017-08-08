@@ -8,6 +8,9 @@ Only the launchers listed below are systemized by default. If you need to system
 
 
 ## Change Log
+12.0.8
+  - Updated for magisk 13.3 and magisk tempate 4. REQUIRES MAGISK 13.1 or higher.
+
 12.0.5
   - New Marshmallow-compatible companion app from [@loserskater](https://github.com/loserskater).
 
