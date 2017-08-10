@@ -6,10 +6,18 @@ MODDIR=${0%/*}
 # This script will be executed in post-fs-data mode
 # More info in the main Magisk thread
 
-# copied from update-binary
-ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
-$BOOTMODE || ps -A 2>/dev/null | grep zygote | grep -v grep >/dev/null && BOOTMODE=true
+# set +f
+STOREDLIST='/data/data/com.loserskater.appsystemizer/files/appslist.conf'
+[ -s "${MODDIR}/module.prop" ] && { ver="$(sed -n 's/version=//p' ${MODDIR}/module.prop)"; ver=${ver:+ $ver}; }
+apps=("com.google.android.apps.nexuslauncher,NexusLauncherPrebuilt" "com.google.android.apps.pixelclauncher,PixelCLauncherPrebuilt" "com.actionlauncher.playstore,ActionLauncher")
 
+log_print() {
+  local LOGFILE=/cache/magisk.log
+  echo "AppSystemizer${ver}: $*" >> $LOGFILE
+  log -p i -t "AppSystemizer${ver}" "$*"
+}
+
+# Copied from update-binary
 is_mounted() {
   if [ ! -z "$2" ]; then
     cat /proc/mounts | grep $1 | grep $2, >/dev/null
@@ -18,79 +26,70 @@ is_mounted() {
   fi
   return $?
 }
-
-# Mount /data and /cache to access MAGISKBIN
-mount /data 2>/dev/null
-mount /cache 2>/dev/null
-
-# This path should work in any cases
-TMPDIR=/dev/tmp
-MOUNTPATH=/magisk
-INSTALLER=$TMPDIR/install
-if is_mounted /data; then
-  IMG=/data/magisk.img
-  MAGISKBIN=/data/magisk
-  if $BOOTMODE; then
-    MOUNTPATH=/dev/magisk_merge
-    IMG=/data/magisk_merge.img
+mount_image() {
+  if [ ! -d "$2" ]; then
+    mount -o rw,remount rootfs /
+    mkdir -p $2 2>/dev/null
+    ($BOOTMODE) && mount -o ro,remount rootfs /
+    [ ! -d "$2" ] && return 1
   fi
-else
-  IMG=/cache/magisk.img
-  MAGISKBIN=/cache/data_bin
-  ui_print "- Data unavailable, using cache workaround"
-fi
-
-# Default permissions
-umask 022
-
-# Mount /data to access MAGISKBIN
-mount /data 2>/dev/null
-
-# Load utility fuctions
-. $MAGISKBIN/util_functions.sh
-get_outfd
-
-log_print() {
-  if $BOOTMODE; then
-    echo "$1"
-  else
-    echo -n -e "ui_print AppSystemizer${ver}: $*\n" >> /proc/self/fd/$OUTFD
-    echo -n -e "ui_print\n" >> /proc/self/fd/$OUTFD
+  if (! is_mounted $2); then
+    LOOPDEVICE=
+    for LOOP in 0 1 2 3 4 5 6 7; do
+      if (! is_mounted $2); then
+        LOOPDEVICE=/dev/block/loop$LOOP
+        if [ ! -f "$LOOPDEVICE" ]; then
+          mknod $LOOPDEVICE b 7 $LOOP 2>/dev/null
+        fi
+        losetup $LOOPDEVICE $1
+        if [ "$?" -eq "0" ]; then
+          mount -t ext4 -o loop $LOOPDEVICE $2
+          if (! is_mounted $2); then
+            /system/bin/toolbox mount -t ext4 -o loop $LOOPDEVICE $2
+          fi
+          if (! is_mounted $2); then
+            /system/bin/toybox mount -t ext4 -o loop $LOOPDEVICE $2
+          fi
+        fi
+        if (is_mounted $2); then
+          log_print "- Mounting $1 to $2"
+          break;
+        fi
+      fi
+    done
   fi
-  log -p i -t "AppSystemizer${ver}" "$*"
 }
-
-# set +f
-STOREDLIST='/data/data/com.loserskater.appsystemizer/files/appslist.conf'
-[ -s "${MODDIR}/module.prop" ] && { ver="$(sed -n 's/version=//p' ${MODDIR}/module.prop)"; ver=${ver:+ $ver}; }
-apps=("com.google.android.apps.nexuslauncher,NexusLauncherPrebuilt" "com.google.android.apps.pixelclauncher,PixelCLauncherPrebuilt" "com.actionlauncher.playstore,ActionLauncher")
-
-appsys_request_size_check() {
-  local i apps line pkg_name pkg_label appsys_reqSizeM=$((reqSizeM + 2))
-  [ -s "$STOREDLIST" ] && eval apps="($(<${STOREDLIST}))"
+request_size_check() {
+  [ -e "$1" ] && reqSizeM=$(unzip -l "$1" 2>/dev/null | tail -n 1 | /data/magisk/busybox awk '{ print $1 }') || reqSizeM=0
+  local i apps apk_size line pkg_name pkg_label
+  [ -s "$STOREDLIST" ] && eval apps="($(<${STOREDLIST}))" || reqSizeM=$((reqSizeM + 1048576))
   for line in "${apps[@]}"; do
     IFS=',' read pkg_name pkg_label <<< $line
     [[ "$pkg_name" = "android" || "$pkg_label" = "AndroidSystem" ]] && continue
     [[ -z "$pkg_name" || -z "$pkg_label" ]] && continue
       for i in /data/app/${pkg_name}-*/base.apk; do
         if [ "$i" != "/data/app/${pkg_name}-*/base.apk" ]; then
-          request_size_check $i
-          appsys_reqSizeM=$((appsys_reqSizeM + reqSizeM))
+          apk_size=$(wc -c <"$i" 2>/dev/null)
+          reqSizeM=$((reqSizeM + apk_size))
         fi
       done
    done
-  reqSizeM=$appsys_reqSizeM
+  reqSizeM=$((reqSizeM / 1048576 + 1))
 }
 
 update() {
   log_print "Updating systemized apps"
+  BOOTMODE=true
   MODID=AppSystemizer
   TMPDIR=/dev/tmp
   INSTALLER=$TMPDIR/$MODID
+  MOUNTPATH=/dev/magisk_merge
+  IMGNAME=magisk_merge.img
   MODPATH=$MOUNTPATH/$MODID
+  IMG=/data/$IMGNAME
   FCI='/magisk(/.*)? u:object_r:system_file:s0'
 
-  appsys_request_size_check
+  request_size_check ""
   SIZE=$((reqSizeM / 32 * 32 + 64));
   mkdir -p $INSTALLER
   echo "$FCI" > ${INSTALLER}/file_contexts_image
