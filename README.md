@@ -8,6 +8,9 @@ Only the launchers listed below are systemized by default. If you need to system
 
 
 ## Change Log
+12.0.10
+  - Version 1400 template.
+
 12.0.5
   - New Marshmallow-compatible companion app from [@loserskater](https://github.com/loserskater).
 
