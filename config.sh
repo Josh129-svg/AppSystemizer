@@ -1,9 +1,7 @@
 ##########################################################################################
 #
-# Magisk
+# Magisk Module Template Config Script
 # by topjohnwu
-#
-# This is a template zip for developers
 #
 ##########################################################################################
 ##########################################################################################
@@ -20,13 +18,8 @@
 ##########################################################################################
 
 ##########################################################################################
-# Defines
+# Configs
 ##########################################################################################
-
-# NOTE: This part has to be adjusted to fit your own needs
-
-# This will be the folder name under /magisk
-# This should also be the same as the id in your module.prop to prevent confusion
 MODID=AppSystemizer
 
 # Set to true if you need to enable Magic Mount
@@ -57,7 +50,6 @@ print_modname() {
   ui_print "   Please, reboot to Android   "
   ui_print "and install from Magisk Manager"
   ui_print "*******************************"
-  [ -z "$SHELL" ] && exit 1
 }
 
 ##########################################################################################
@@ -86,16 +78,11 @@ REPLACE="
 # Permissions
 ##########################################################################################
 
-# NOTE: This part has to be adjusted to fit your own needs
-
 set_permissions() {
-  # Default permissions, don't remove them
-  set_perm_recursive  $MODPATH  0  0  0755  0644
-
   # Only some special files require specific permissions
   # The default permissions should be good enough for most cases
 
-  # Some templates if you have no idea what to do:
+  # Here are some examples for the set_perm functions:
 
   # set_perm_recursive  <dirname>                <owner> <group> <dirpermission> <filepermission> <contexts> (default: u:object_r:system_file:s0)
   # set_perm_recursive  $MODPATH/system/lib       0       0       0755            0644
@@ -104,6 +91,9 @@ set_permissions() {
   # set_perm  $MODPATH/system/bin/app_process32   0       2000    0755         u:object_r:zygote_exec:s0
   # set_perm  $MODPATH/system/bin/dex2oat         0       2000    0755         u:object_r:dex2oat_exec:s0
   # set_perm  $MODPATH/system/lib/libart.so       0       0       0644
+
+  # The following is default permissions, DO NOT remove
+  set_perm_recursive  $MODPATH  0  0  0755  0644
 }
 
 # Retrieve current module.prop ver and versionCode
